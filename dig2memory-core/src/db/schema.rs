@@ -69,10 +69,12 @@ CREATE TABLE IF NOT EXISTS file_edges (
 CREATE INDEX IF NOT EXISTS idx_file_edges_to ON file_edges(workspace_id, to_file);
 
 CREATE TABLE IF NOT EXISTS crate_nodes (
-    workspace_id    TEXT NOT NULL,
-    name            TEXT NOT NULL,
-    version         TEXT,
-    manifest_path   TEXT NOT NULL,
+    workspace_id        TEXT NOT NULL,
+    name                TEXT NOT NULL,
+    version             TEXT NOT NULL DEFAULT '',
+    manifest_path       TEXT NOT NULL,
+    source_dir          TEXT NOT NULL DEFAULT '',
+    is_workspace_member INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (workspace_id, name)
 );
 
@@ -81,6 +83,7 @@ CREATE TABLE IF NOT EXISTS crate_dep_edges (
     from_crate      TEXT NOT NULL,
     to_crate        TEXT NOT NULL,
     is_path_dep     INTEGER NOT NULL DEFAULT 0,
+    dep_path        TEXT,
     PRIMARY KEY (workspace_id, from_crate, to_crate)
 );
 ";

@@ -15,11 +15,8 @@ pub enum CoreError {
         source: std::io::Error,
     },
 
-    #[error("manifest error at {path}: {source}")]
-    Manifest {
-        path: String,
-        source: toml::de::Error,
-    },
+    #[error("manifest error at {path}: {reason}")]
+    Manifest { path: String, reason: String },
 
     #[error("workspace not found: {id}")]
     WorkspaceNotFound { id: String },

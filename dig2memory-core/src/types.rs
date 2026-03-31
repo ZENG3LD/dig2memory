@@ -161,8 +161,12 @@ impl FileEdgeKind {
 pub struct CrateNode {
     pub workspace_id: String,
     pub name: String,
-    pub version: Option<String>,
+    pub version: String,
     pub manifest_path: String,
+    /// Relative directory containing the crate's src/ (e.g. "zengeld-terminal/crates/app").
+    pub source_dir: String,
+    /// True if this package is a direct workspace member.
+    pub is_workspace_member: bool,
 }
 
 /// A dependency edge between crates.
@@ -172,6 +176,8 @@ pub struct DepEdge {
     pub from_crate: String,
     pub to_crate: String,
     pub is_path_dep: bool,
+    /// Resolved relative path for path deps, None for registry deps.
+    pub dep_path: Option<String>,
 }
 
 /// Metadata record for an indexed file.

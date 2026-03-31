@@ -14,6 +14,7 @@ pub fn router() -> Router<SharedState> {
         .route("/graph/files", get(files_in_crate))
         .route("/graph/impact", get(impact_analysis))
         .route("/graph/hotspots", get(hotspots))
+        .route("/graph/resolve", get(resolve_symbol))
 }
 
 #[derive(Deserialize)]
@@ -103,4 +104,31 @@ async fn hotspots(
     let limit = params.limit.unwrap_or(20);
     let result = reader::get_hotspots(&db, params.workspace.as_deref(), limit)?;
     Ok(Json(serde_json::json!(result)))
+}
+
+#[derive(Deserialize)]
+struct ResolveQuery {
+    sym: String,
+    workspace: String,
+}
+
+/// `GET /graph/resolve?sym=ExchangeError&workspace=nemo`
+///
+/// Returns all symbols matching `sym` along with the crate that owns each one.
+async fn resolve_symbol(
+    State(state): State<SharedState>,
+    Query(params): Query<ResolveQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let db = state.db.lock().unwrap();
+    let hits = reader::resolve_symbol_to_crate(&db, &params.workspace, &params.sym)?;
+    let results: Vec<serde_json::Value> = hits
+        .into_iter()
+        .map(|(sym, crate_node)| {
+            serde_json::json!({
+                "symbol": sym,
+                "crate": crate_node,
+            })
+        })
+        .collect();
+    Ok(Json(serde_json::json!({ "sym": params.sym, "results": results })))
 }

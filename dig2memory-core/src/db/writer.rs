@@ -130,16 +130,20 @@ pub fn upsert_file_edge(conn: &Connection, edge: &FileEdge) -> Result<(), CoreEr
 /// Insert or update a crate node.
 pub fn upsert_crate_node(conn: &Connection, node: &CrateNode) -> Result<(), CoreError> {
     conn.execute(
-        "INSERT INTO crate_nodes (workspace_id, name, version, manifest_path)
-         VALUES (?1, ?2, ?3, ?4)
+        "INSERT INTO crate_nodes (workspace_id, name, version, manifest_path, source_dir, is_workspace_member)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(workspace_id, name) DO UPDATE SET
-             version       = excluded.version,
-             manifest_path = excluded.manifest_path",
+             version             = excluded.version,
+             manifest_path       = excluded.manifest_path,
+             source_dir          = excluded.source_dir,
+             is_workspace_member = excluded.is_workspace_member",
         params![
             node.workspace_id,
             node.name,
             node.version,
             node.manifest_path,
+            node.source_dir,
+            node.is_workspace_member as i32,
         ],
     )?;
     Ok(())
@@ -148,15 +152,17 @@ pub fn upsert_crate_node(conn: &Connection, node: &CrateNode) -> Result<(), Core
 /// Insert or update a crate dependency edge.
 pub fn upsert_crate_dep_edge(conn: &Connection, edge: &DepEdge) -> Result<(), CoreError> {
     conn.execute(
-        "INSERT INTO crate_dep_edges (workspace_id, from_crate, to_crate, is_path_dep)
-         VALUES (?1, ?2, ?3, ?4)
+        "INSERT INTO crate_dep_edges (workspace_id, from_crate, to_crate, is_path_dep, dep_path)
+         VALUES (?1, ?2, ?3, ?4, ?5)
          ON CONFLICT(workspace_id, from_crate, to_crate) DO UPDATE SET
-             is_path_dep = excluded.is_path_dep",
+             is_path_dep = excluded.is_path_dep,
+             dep_path    = excluded.dep_path",
         params![
             edge.workspace_id,
             edge.from_crate,
             edge.to_crate,
             edge.is_path_dep as i32,
+            edge.dep_path,
         ],
     )?;
     Ok(())
