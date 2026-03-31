@@ -8,7 +8,7 @@ name = "dig2memory-server"
 path = "src/main.rs"
 
 [dependencies]
-dig2memory-core = { path = "../dig2memory-core" }
+dig2memory-core = { path = "../dig2memory-core", features = ["lang-typescript", "lang-python", "lang-go"] }
 axum = { version = "0.8", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6", features = ["cors"] }

@@ -1,7 +1,7 @@
-use crate::ast::{extract_calls, extract_symbols, RustParser};
+use crate::ast::registry;
 use crate::db::{reader, writer};
 use crate::error::CoreError;
-use crate::graph::{crates::parse_cargo_workspace, files::extract_file_edges};
+use crate::graph::crates::parse_cargo_workspace;
 use crate::types::{CallEdge, FileRecord, IndexRequest, IndexResult, Symbol, SymbolKind, Workspace};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -9,19 +9,16 @@ use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use walkdir::WalkDir;
 
-/// Incremental Rust workspace indexer.
+/// Incremental workspace indexer supporting multiple languages.
 ///
 /// Designed for use inside `spawn_blocking`. Holds an `Arc<Mutex<Connection>>`
 /// and releases the lock between batches so other requests can proceed.
-pub struct Indexer {
-    parser: RustParser,
-}
+pub struct Indexer {}
 
 impl Indexer {
     /// Create a new indexer.
     pub fn new() -> Result<Self, CoreError> {
-        let parser = RustParser::new()?;
-        Ok(Self { parser })
+        Ok(Self {})
     }
 
     /// Run an incremental index pass for the given request.
@@ -48,10 +45,10 @@ impl Indexer {
             writer::upsert_workspace(&conn, &workspace)?;
         }
 
-        // Phase 2: Collect all .rs file paths — no DB lock needed.
-        let all_files = collect_rs_files(root);
+        // Phase 2: Collect all supported source files — no DB lock needed.
+        let all_files = collect_source_files(root);
         let files_scanned = all_files.len() as u32;
-        tracing::info!("found {} .rs files in {:?}", files_scanned, root);
+        tracing::info!("found {} source files in {:?}", files_scanned, root);
 
         // Phase 3: Filter to files that need (re)indexing.
         let files_to_index: Vec<(PathBuf, String, i64, i64)> = if req.force {
@@ -112,7 +109,11 @@ impl Indexer {
                         continue;
                     }
                 };
-                let tree = match self.parser.parse_bytes(&src) {
+                let mut lang = match registry::language_for_file(rel_path) {
+                    Some(l) => l,
+                    None => continue, // unsupported extension
+                };
+                let tree = match lang.parse(&src) {
                     Ok(t) => t,
                     Err(e) => {
                         tracing::warn!("parse error {}: {}", rel_path, e);
@@ -121,9 +122,10 @@ impl Indexer {
                     }
                 };
 
-                let symbols = extract_symbols(&tree, &src, workspace_id, rel_path);
-                let calls = extract_calls(&tree, &src, rel_path, &symbols);
-                let file_edges = extract_file_edges(&tree, &src, workspace_id, rel_path, &req.root_path);
+                let symbols = lang.extract_symbols(&tree, &src, workspace_id, rel_path);
+                let calls = lang.extract_calls(&tree, &src, rel_path, &symbols);
+                let file_edges =
+                    lang.extract_file_edges(&tree, &src, workspace_id, rel_path, &req.root_path);
 
                 parsed_batch.push(ParsedFile {
                     rel_path: rel_path.clone(),
@@ -216,7 +218,7 @@ impl Indexer {
 
         // Phase 5: Remove stale files (brief lock).
         {
-            let current_files: HashSet<String> = collect_rs_files(root)
+            let current_files: HashSet<String> = collect_source_files(root)
                 .into_iter()
                 .map(|(_, rel, _, _)| rel)
                 .collect();
@@ -306,10 +308,11 @@ struct ParsedFile {
     file_edges: Vec<crate::types::FileEdge>,
 }
 
-/// Collect all `.rs` files under `root`, returning `(abs_path, rel_path, mtime, size)`.
+/// Collect all supported source files under `root`, returning `(abs_path, rel_path, mtime, size)`.
 ///
+/// The set of supported extensions is determined by the enabled language features.
 /// Paths are normalised to forward slashes so they are consistent across platforms.
-fn collect_rs_files(root: &Path) -> Vec<(PathBuf, String, i64, i64)> {
+fn collect_source_files(root: &Path) -> Vec<(PathBuf, String, i64, i64)> {
     let mut result = Vec::new();
 
     for entry in WalkDir::new(root)
@@ -330,7 +333,11 @@ fn collect_rs_files(root: &Path) -> Vec<(PathBuf, String, i64, i64)> {
         }
 
         let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+        let ext = match path.extension().and_then(|e| e.to_str()) {
+            Some(e) => e,
+            None => continue,
+        };
+        if !registry::is_supported_extension(ext) {
             continue;
         }
 

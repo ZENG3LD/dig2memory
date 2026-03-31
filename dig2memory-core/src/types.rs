@@ -25,9 +25,10 @@ pub struct Symbol {
     pub signature: Option<String>,
 }
 
-/// The kind of a Rust symbol.
+/// The kind of a symbol across all supported languages.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SymbolKind {
+    // Rust-native
     Function,
     AsyncFunction,
     Struct,
@@ -38,6 +39,17 @@ pub enum SymbolKind {
     TypeAlias,
     Macro,
     Module,
+    // Multi-language
+    /// Class definition (Python, TypeScript).
+    Class,
+    /// Interface declaration (TypeScript, Go).
+    Interface,
+    /// Method on a class or struct (Python, TypeScript, Go).
+    Method,
+    /// Module-level variable binding (Python, TypeScript, Go).
+    Variable,
+    /// Class property (TypeScript).
+    Property,
 }
 
 impl std::fmt::Display for SymbolKind {
@@ -53,6 +65,11 @@ impl std::fmt::Display for SymbolKind {
             SymbolKind::TypeAlias => "type_alias",
             SymbolKind::Macro => "macro",
             SymbolKind::Module => "module",
+            SymbolKind::Class => "class",
+            SymbolKind::Interface => "interface",
+            SymbolKind::Method => "method",
+            SymbolKind::Variable => "variable",
+            SymbolKind::Property => "property",
         };
         write!(f, "{s}")
     }
@@ -72,6 +89,11 @@ impl SymbolKind {
             "type_alias" => Some(SymbolKind::TypeAlias),
             "macro" => Some(SymbolKind::Macro),
             "module" => Some(SymbolKind::Module),
+            "class" => Some(SymbolKind::Class),
+            "interface" => Some(SymbolKind::Interface),
+            "method" => Some(SymbolKind::Method),
+            "variable" => Some(SymbolKind::Variable),
+            "property" => Some(SymbolKind::Property),
             _ => None,
         }
     }
