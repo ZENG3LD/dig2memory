@@ -4,7 +4,7 @@ use axum::http::StatusCode;
 use dig2memory_core::CoreError;
 
 pub struct AppState {
-    pub db: Mutex<rusqlite::Connection>,
+    pub db: Arc<Mutex<rusqlite::Connection>>,
     pub data_dir: String,
 }
 

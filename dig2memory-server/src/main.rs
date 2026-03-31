@@ -26,7 +26,7 @@ async fn main() {
     init_schema(&conn).expect("failed to init schema");
 
     let state: SharedState = Arc::new(AppState {
-        db: Mutex::new(conn),
+        db: Arc::new(Mutex::new(conn)),
         data_dir: config.data_dir,
     });
 
