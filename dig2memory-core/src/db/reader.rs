@@ -55,41 +55,93 @@ pub fn get_symbols_in_file(
 }
 
 /// Get all symbols that call a given callee name.
+///
+/// Uses `caller_symbol_id` for precise symbol lookup when it is set (non-zero).
+/// For legacy rows where `caller_symbol_id = 0`, falls back to a file-level
+/// match but returns only the first symbol in that file rather than all of
+/// them (to avoid the original bug of returning every symbol in a file).
 pub fn get_callers_of(
     conn: &Connection,
     callee_name: &str,
     workspace_id: Option<&str>,
 ) -> Result<Vec<Symbol>, CoreError> {
-    match workspace_id {
+    // Step 1: fetch all edges for the callee.
+    let edges: Vec<(i64, String, String)> = match workspace_id {
         Some(ws) => {
             let mut stmt = conn.prepare(
-                "SELECT DISTINCT s.id, s.workspace_id, s.file_path, s.name, s.kind, s.visibility,
-                        s.line, s.col, s.parent_name, s.signature
-                 FROM call_edges ce
-                 JOIN symbols s ON s.workspace_id = ce.workspace_id AND s.file_path = ce.caller_file
-                 WHERE ce.callee_name = ?1 AND ce.workspace_id = ?2",
+                "SELECT DISTINCT caller_symbol_id, caller_file, workspace_id
+                 FROM call_edges
+                 WHERE callee_name = ?1 AND workspace_id = ?2",
             )?;
-            let result = stmt
-                .query_map(params![callee_name, ws], row_to_symbol)?
+            let rows: Vec<(i64, String, String)> = stmt
+                .query_map(params![callee_name, ws], |row| {
+                    Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+                })?
                 .filter_map(|r| r.ok())
                 .collect();
-            Ok(result)
+            rows
         }
         None => {
             let mut stmt = conn.prepare(
-                "SELECT DISTINCT s.id, s.workspace_id, s.file_path, s.name, s.kind, s.visibility,
-                        s.line, s.col, s.parent_name, s.signature
-                 FROM call_edges ce
-                 JOIN symbols s ON s.workspace_id = ce.workspace_id AND s.file_path = ce.caller_file
-                 WHERE ce.callee_name = ?1",
+                "SELECT DISTINCT caller_symbol_id, caller_file, workspace_id
+                 FROM call_edges
+                 WHERE callee_name = ?1",
             )?;
-            let result = stmt
-                .query_map(params![callee_name], row_to_symbol)?
+            let rows: Vec<(i64, String, String)> = stmt
+                .query_map(params![callee_name], |row| {
+                    Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+                })?
                 .filter_map(|r| r.ok())
                 .collect();
-            Ok(result)
+            rows
+        }
+    };
+
+    // Step 2: for each edge resolve the symbol.
+    let mut results: Vec<Symbol> = Vec::new();
+    let mut seen_ids: std::collections::HashSet<i64> = std::collections::HashSet::new();
+
+    for (symbol_id, caller_file, ws_id) in edges {
+        if symbol_id != 0 {
+            // Precise lookup by id.
+            let mut stmt = conn.prepare(
+                "SELECT id, workspace_id, file_path, name, kind, visibility,
+                        line, col, parent_name, signature
+                 FROM symbols WHERE id = ?1",
+            )?;
+            let sym = stmt
+                .query_map(params![symbol_id], row_to_symbol)?
+                .filter_map(|r| r.ok())
+                .next();
+            if let Some(s) = sym {
+                if seen_ids.insert(s.id) {
+                    results.push(s);
+                }
+            }
+        } else {
+            // Legacy fallback: return only the first symbol in caller_file so
+            // we don't inflate results with every symbol in the file.
+            let mut stmt = conn.prepare(
+                "SELECT id, workspace_id, file_path, name, kind, visibility,
+                        line, col, parent_name, signature
+                 FROM symbols
+                 WHERE workspace_id = ?1 AND file_path = ?2
+                 ORDER BY line ASC
+                 LIMIT 1",
+            )?;
+            let sym = stmt
+                .query_map(params![ws_id, caller_file], row_to_symbol)?
+                .filter_map(|r| r.ok())
+                .next();
+            if let Some(s) = sym {
+                if seen_ids.insert(s.id) {
+                    results.push(s);
+                }
+            }
         }
     }
+
+    Ok(results)
 }
 
 /// Get all file edges originating from a file.
@@ -341,7 +393,7 @@ pub fn get_hotspots(
         Some(ws) => {
             let mut stmt = conn.prepare(
                 "SELECT to_file, COUNT(*) as cnt
-                 FROM file_edges WHERE workspace_id = ?1
+                 FROM file_edges WHERE workspace_id = ?1 AND to_file LIKE '%.rs'
                  GROUP BY to_file ORDER BY cnt DESC LIMIT ?2",
             )?;
             let result = stmt
@@ -356,7 +408,7 @@ pub fn get_hotspots(
         None => {
             let mut stmt = conn.prepare(
                 "SELECT to_file, COUNT(*) as cnt
-                 FROM file_edges
+                 FROM file_edges WHERE to_file LIKE '%.rs'
                  GROUP BY to_file ORDER BY cnt DESC LIMIT ?1",
             )?;
             let result = stmt

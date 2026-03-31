@@ -3,4 +3,5 @@ resolver = "2"
 members = [
     "dig2memory-core",
     "dig2memory-server",
+    "dig2memory-cli",
 ]

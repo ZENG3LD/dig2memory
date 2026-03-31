@@ -2,7 +2,7 @@ use crate::ast::{extract_calls, extract_symbols, RustParser};
 use crate::db::{reader, writer};
 use crate::error::CoreError;
 use crate::graph::{crates::parse_cargo_workspace, files::extract_file_edges};
-use crate::types::{FileRecord, IndexRequest, IndexResult, Workspace};
+use crate::types::{CallEdge, FileRecord, IndexRequest, IndexResult, Symbol, SymbolKind, Workspace};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -122,8 +122,8 @@ impl Indexer {
                 };
 
                 let symbols = extract_symbols(&tree, &src, workspace_id, rel_path);
-                let calls = extract_calls(&tree, &src, rel_path);
-                let file_edges = extract_file_edges(&tree, &src, workspace_id, rel_path);
+                let calls = extract_calls(&tree, &src, rel_path, &symbols);
+                let file_edges = extract_file_edges(&tree, &src, workspace_id, rel_path, &req.root_path);
 
                 parsed_batch.push(ParsedFile {
                     rel_path: rel_path.clone(),
@@ -156,7 +156,13 @@ impl Indexer {
                     };
                     writer::upsert_file_record(&tx, &file_rec)?;
 
-                    // Insert symbols and trigrams.
+                    // Insert symbols and build a line -> (db_id, kind_priority) map so we
+                    // can resolve caller_symbol_id for call edges below.
+                    //
+                    // Entries: (symbol_start_line, kind_priority, db_id)
+                    // kind_priority: 2 = function/async_function, 1 = everything else.
+                    let mut line_to_id: Vec<(u32, u8, i64)> = Vec::with_capacity(pf.symbols.len());
+
                     for sym in &pf.symbols {
                         match writer::insert_symbol(&tx, sym) {
                             Ok(sym_id) => {
@@ -165,6 +171,11 @@ impl Indexer {
                                 {
                                     tracing::warn!("trigram insert error: {}", e);
                                 }
+                                let kind_priority: u8 = match sym.kind {
+                                    SymbolKind::Function | SymbolKind::AsyncFunction => 2,
+                                    _ => 1,
+                                };
+                                line_to_id.push((sym.line, kind_priority, sym_id));
                             }
                             Err(e) => {
                                 tracing::warn!("symbol insert error: {}", e);
@@ -172,10 +183,12 @@ impl Indexer {
                         }
                     }
 
-                    // Insert call edges.
+                    // Insert call edges, resolving caller_symbol_id from line_to_id.
                     for edge in &pf.calls {
-                        let mut edge = edge.clone();
+                        let mut edge: CallEdge = edge.clone();
                         edge.workspace_id = workspace_id.clone();
+                        // Resolve the enclosing symbol using DB-assigned ids.
+                        edge.caller_symbol_id = resolve_caller_id(&line_to_id, edge.line);
                         if let Err(e) = writer::insert_call_edge(&tx, &edge) {
                             tracing::warn!("call edge insert error: {}", e);
                         }
@@ -266,13 +279,30 @@ impl Indexer {
     }
 }
 
+/// Find the db id of the innermost symbol enclosing `call_line` (1-based).
+///
+/// `entries` is a list of `(symbol_start_line, kind_priority, db_id)` tuples
+/// built during the symbol-insert pass.  We pick the entry whose start line is
+/// the largest value still <= `call_line`, preferring higher `kind_priority`
+/// (functions > impls) on ties.
+///
+/// Returns `0` when no enclosing symbol is found (e.g. top-level calls).
+fn resolve_caller_id(entries: &[(u32, u8, i64)], call_line: u32) -> i64 {
+    entries
+        .iter()
+        .filter(|(line, _, _)| *line <= call_line)
+        .max_by_key(|(line, priority, _)| (*line, *priority))
+        .map(|(_, _, id)| *id)
+        .unwrap_or(0)
+}
+
 /// Intermediate parsed file data, assembled before the DB lock.
 struct ParsedFile {
     rel_path: String,
     mtime: i64,
     size: i64,
-    symbols: Vec<crate::types::Symbol>,
-    calls: Vec<crate::types::CallEdge>,
+    symbols: Vec<Symbol>,
+    calls: Vec<CallEdge>,
     file_edges: Vec<crate::types::FileEdge>,
 }
 
