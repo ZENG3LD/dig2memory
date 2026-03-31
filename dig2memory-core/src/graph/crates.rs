@@ -36,15 +36,15 @@ pub fn parse_cargo_workspace(
         let pkg_dir = pkg_manifest
             .strip_suffix("/Cargo.toml")
             .unwrap_or(&pkg_manifest);
-        let source_dir = if pkg_dir.starts_with(root_str) {
-            pkg_dir[root_str.len()..].trim_start_matches('/').to_string()
+        let source_dir = if let Some(stripped) = pkg_dir.strip_prefix(root_str) {
+            stripped.trim_start_matches('/').to_string()
         } else {
             pkg_dir.to_string()
         };
 
         // manifest_path stored relative, e.g. "zengeld-terminal/crates/app/Cargo.toml"
-        let manifest_rel = if pkg_manifest.starts_with(root_str) {
-            pkg_manifest[root_str.len()..].trim_start_matches('/').to_string()
+        let manifest_rel = if let Some(stripped) = pkg_manifest.strip_prefix(root_str) {
+            stripped.trim_start_matches('/').to_string()
         } else {
             pkg_manifest.clone()
         };
@@ -69,8 +69,8 @@ pub fn parse_cargo_workspace(
 
             // Make dep_path relative to workspace root when possible.
             let dep_path_rel = dep_path.map(|p| {
-                if p.starts_with(root_str) {
-                    p[root_str.len()..].trim_start_matches('/').to_string()
+                if let Some(stripped) = p.strip_prefix(root_str) {
+                    stripped.trim_start_matches('/').to_string()
                 } else {
                     p
                 }

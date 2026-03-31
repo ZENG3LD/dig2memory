@@ -59,6 +59,7 @@ impl std::fmt::Display for SymbolKind {
 }
 
 impl SymbolKind {
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "function" => Some(SymbolKind::Function),
@@ -98,6 +99,7 @@ impl std::fmt::Display for Visibility {
 }
 
 impl Visibility {
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "public" => Some(Visibility::Public),
@@ -147,6 +149,7 @@ impl std::fmt::Display for FileEdgeKind {
 }
 
 impl FileEdgeKind {
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
             "use_decl" => Some(FileEdgeKind::UseDecl),

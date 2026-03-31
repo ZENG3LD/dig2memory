@@ -102,7 +102,7 @@ fn walk_for_calls(
 
 /// Extract the plain name from a type node (handles generic_type by looking at
 /// the inner type_identifier).
-fn extract_type_name<'a>(node: Node<'_>, src: &'a [u8]) -> String {
+fn extract_type_name(node: Node<'_>, src: &[u8]) -> String {
     match node.kind() {
         "type_identifier" | "identifier" => node_text(node, src).to_owned(),
         "generic_type" => {
