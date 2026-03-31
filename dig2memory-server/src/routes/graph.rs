@@ -1,0 +1,106 @@
+use axum::{
+    extract::{Query, State},
+    routing::get,
+    Json, Router,
+};
+use serde::Deserialize;
+use std::collections::{HashSet, VecDeque};
+use dig2memory_core::db::reader;
+use crate::state::{SharedState, AppError};
+
+pub fn router() -> Router<SharedState> {
+    Router::new()
+        .route("/graph/crates", get(list_crates))
+        .route("/graph/files", get(files_in_crate))
+        .route("/graph/impact", get(impact_analysis))
+        .route("/graph/hotspots", get(hotspots))
+}
+
+#[derive(Deserialize)]
+struct WorkspaceQuery {
+    workspace: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct CrateQuery {
+    #[serde(rename = "crate")]
+    crate_name: String,
+    workspace: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct FileQuery {
+    file: String,
+    workspace: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct HotspotsQuery {
+    workspace: Option<String>,
+    limit: Option<u32>,
+}
+
+async fn list_crates(
+    State(state): State<SharedState>,
+    Query(params): Query<WorkspaceQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let db = state.db.lock().unwrap();
+    let nodes = reader::list_crate_nodes(&db, params.workspace.as_deref())?;
+    let edges = reader::list_crate_deps(&db, params.workspace.as_deref())?;
+    Ok(Json(serde_json::json!({ "nodes": nodes, "edges": edges })))
+}
+
+async fn files_in_crate(
+    State(state): State<SharedState>,
+    Query(params): Query<CrateQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let db = state.db.lock().unwrap();
+    let workspace = params.workspace.as_deref().unwrap_or("");
+    let result = reader::list_file_edges(&db, workspace, None)?;
+    // Filter to edges that belong to the requested crate by crate name prefix
+    let filtered: Vec<_> = result
+        .into_iter()
+        .filter(|e| {
+            e.from_file.contains(&params.crate_name) || e.to_file.contains(&params.crate_name)
+        })
+        .collect();
+    Ok(Json(serde_json::json!(filtered)))
+}
+
+async fn impact_analysis(
+    State(state): State<SharedState>,
+    Query(params): Query<FileQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let db = state.db.lock().unwrap();
+    let workspace = params.workspace.as_deref().unwrap_or("");
+
+    // BFS over reverse file dependencies
+    let mut visited: HashSet<String> = HashSet::new();
+    let mut queue: VecDeque<String> = VecDeque::new();
+    queue.push_back(params.file.clone());
+    visited.insert(params.file.clone());
+
+    while let Some(current) = queue.pop_front() {
+        let reverse_deps = reader::get_reverse_file_deps(&db, workspace, &current)?;
+        for dep in reverse_deps {
+            if visited.insert(dep.clone()) {
+                queue.push_back(dep);
+            }
+        }
+    }
+
+    // Remove the seed file itself from results — callers only want affected files
+    visited.remove(&params.file);
+    let affected: Vec<String> = visited.into_iter().collect();
+    Ok(Json(serde_json::json!({ "file": params.file, "affected": affected })))
+}
+
+async fn hotspots(
+    State(state): State<SharedState>,
+    Query(params): Query<HotspotsQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let db = state.db.lock().unwrap();
+    let limit = params.limit.unwrap_or(20);
+    let result = reader::get_hotspots(&db, params.workspace.as_deref(), limit)?;
+    Ok(Json(serde_json::json!(result)))
+}

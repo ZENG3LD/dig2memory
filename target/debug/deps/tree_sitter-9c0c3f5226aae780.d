@@ -1,0 +1,13 @@
+C:\Users\VA PC\CODING\ML_TRADING\nemo\dig2memory\target\debug\deps\tree_sitter-9c0c3f5226aae780.d: C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\lib.rs C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\ffi.rs C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\util.rs C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\./README.md C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\./bindings.rs C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\../src/parser.h C:\Users\VA\ PC\CODING\ML_TRADING\nemo\dig2memory\target\debug\build\tree-sitter-97956112b2a1d022\out/stdlib-symbols.txt
+
+C:\Users\VA PC\CODING\ML_TRADING\nemo\dig2memory\target\debug\deps\libtree_sitter-9c0c3f5226aae780.rmeta: C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\lib.rs C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\ffi.rs C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\util.rs C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\./README.md C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\./bindings.rs C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\../src/parser.h C:\Users\VA\ PC\CODING\ML_TRADING\nemo\dig2memory\target\debug\build\tree-sitter-97956112b2a1d022\out/stdlib-symbols.txt
+
+C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\lib.rs:
+C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\ffi.rs:
+C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\util.rs:
+C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\./README.md:
+C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\./bindings.rs:
+C:\Users\VA\ PC\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tree-sitter-0.24.7\binding_rust\../src/parser.h:
+C:\Users\VA\ PC\CODING\ML_TRADING\nemo\dig2memory\target\debug\build\tree-sitter-97956112b2a1d022\out/stdlib-symbols.txt:
+
+# env-dep:OUT_DIR=C:\\Users\\VA PC\\CODING\\ML_TRADING\\nemo\\dig2memory\\target\\debug\\build\\tree-sitter-97956112b2a1d022\\out

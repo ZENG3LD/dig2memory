@@ -1,0 +1,12 @@
+C:\Users\VA PC\CODING\ML_TRADING\nemo\dig2memory\target\debug\deps\dig2memory_server-fa99febaf6ca488f.d: dig2memory-server\src\main.rs dig2memory-server\src\config.rs dig2memory-server\src\state.rs dig2memory-server\src\routes\mod.rs dig2memory-server\src\routes\ast.rs dig2memory-server\src\routes\graph.rs dig2memory-server\src\routes\index.rs dig2memory-server\src\routes\health.rs
+
+C:\Users\VA PC\CODING\ML_TRADING\nemo\dig2memory\target\debug\deps\libdig2memory_server-fa99febaf6ca488f.rmeta: dig2memory-server\src\main.rs dig2memory-server\src\config.rs dig2memory-server\src\state.rs dig2memory-server\src\routes\mod.rs dig2memory-server\src\routes\ast.rs dig2memory-server\src\routes\graph.rs dig2memory-server\src\routes\index.rs dig2memory-server\src\routes\health.rs
+
+dig2memory-server\src\main.rs:
+dig2memory-server\src\config.rs:
+dig2memory-server\src\state.rs:
+dig2memory-server\src\routes\mod.rs:
+dig2memory-server\src\routes\ast.rs:
+dig2memory-server\src\routes\graph.rs:
+dig2memory-server\src\routes\index.rs:
+dig2memory-server\src\routes\health.rs:
