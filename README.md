@@ -1,18 +1,21 @@
 # dig2memory
 
-Code intelligence server and CLI for AI agents. Indexes Rust codebases using tree-sitter AST parsing, builds dependency graphs via cargo_metadata, and provides fuzzy symbol search, caller tracking, and impact analysis.
+Code intelligence server and CLI for AI agents. Indexes codebases using tree-sitter AST parsing, builds dependency graphs, and provides fuzzy symbol search, caller tracking, and impact analysis.
+
+**Supported languages**: Rust, TypeScript/JavaScript (TSX/JSX), Python, Go
 
 Built for [Claude Code](https://claude.ai/code) agents but works with any AI coding assistant that can run shell commands.
 
 ## Features
 
-- **Fuzzy symbol search** — find functions, structs, traits, impls by name (trigram index)
-- **Caller tracking** — who calls a given function/method
-- **File dependencies** — what a file imports (`use`, `mod`)
+- **Multi-language** — Rust, TypeScript/JS/TSX/JSX, Python, Go (pluggable via `LanguageSupport` trait)
+- **Fuzzy symbol search** — find functions, classes, structs, interfaces by name (trigram index)
+- **Caller tracking** — who calls a given function/method (indexed, not grep)
+- **File dependencies** — what a file imports (`use`, `mod`, `import`, `from`)
 - **Impact analysis** — what breaks if a file changes (reverse dependency graph)
-- **Crate dependency graph** — workspace-level crate relationships via cargo_metadata
+- **Crate/package dependency graph** — workspace-level relationships via cargo_metadata
 - **Hotspots** — most depended-upon files in the codebase
-- **Symbol-to-crate resolution** — which crate owns a symbol
+- **Symbol-to-crate resolution** — which crate/package owns a symbol
 
 ## Architecture
 
@@ -26,19 +29,32 @@ dig2memory/
 └── data/                # SQLite database (gitignored)
 ```
 
-**Stack**: tree-sitter-rust, rusqlite (bundled), cargo_metadata, clap, axum + tokio (server only)
+**Stack**: tree-sitter (Rust/TS/Python/Go grammars), rusqlite (bundled), cargo_metadata, clap, axum + tokio (server only)
 
 ## Quick Start
 
 ### Build
 
 ```bash
+# All languages (default)
 cargo build --release
+
+# Rust only (faster compile)
+cargo build --release --no-default-features --features lang-rust
 ```
 
 This produces two binaries:
 - `target/release/dig2memory` — CLI (recommended for AI agents)
 - `target/release/dig2memory-server` — HTTP server
+
+### Feature Flags
+
+| Feature | Languages | Default |
+|---------|-----------|---------|
+| `lang-rust` | `.rs` | Yes |
+| `lang-typescript` | `.ts`, `.tsx`, `.js`, `.jsx` | Yes |
+| `lang-python` | `.py` | Yes |
+| `lang-go` | `.go` | Yes |
 
 ### Index a workspace
 
@@ -138,11 +154,13 @@ Add --json for structured output.
 
 ## Performance
 
-Tested on a 250K symbol / 13K file Rust workspace:
+Tested on a mixed-language workspace (Rust + TS + Python + Go):
 
 | Metric | Value |
 |--------|-------|
-| Full index | ~4.5 min |
+| Files indexed | 30,618 |
+| Symbols extracted | 580,612 |
+| Full index | ~5 min |
 | Incremental re-index | seconds |
 | Database size | ~700 MB |
 | Symbol search | <50ms |
