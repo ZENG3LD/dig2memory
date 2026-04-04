@@ -1,7 +1,10 @@
 [package]
 name = "dig2memory-core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+description = "Code intelligence core — AST indexing, dependency graph, and symbol search"
+license = "MIT"
+repository = "https://github.com/ZENG3LD/dig2memory"
 
 [features]
 default = ["lang-rust"]

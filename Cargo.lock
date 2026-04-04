@@ -260,7 +260,7 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "dig2memory-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "clap",
  "dig2memory-core",
@@ -270,7 +270,7 @@ dependencies = [
 
 [[package]]
 name = "dig2memory-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cargo_metadata",
  "notify",
@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "dig2memory-server"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "axum",
  "dig2memory-core",
