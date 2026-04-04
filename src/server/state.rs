@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use axum::response::{IntoResponse, Response};
 use axum::http::StatusCode;
-use dig2memory_core::CoreError;
+use crate::CoreError;
 
 pub struct AppState {
     pub db: Arc<Mutex<rusqlite::Connection>>,

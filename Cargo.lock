@@ -259,47 +259,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
-name = "dig2memory-cli"
-version = "0.1.2"
+name = "dig2memory"
+version = "0.2.0"
 dependencies = [
- "clap",
- "dig2memory-core",
- "rusqlite",
- "serde_json",
-]
-
-[[package]]
-name = "dig2memory-core"
-version = "0.1.2"
-dependencies = [
+ "axum",
  "cargo_metadata",
+ "clap",
  "notify",
  "rusqlite",
  "serde",
  "serde_json",
  "thiserror",
+ "tokio",
+ "tower-http",
  "tracing",
+ "tracing-subscriber",
  "tree-sitter",
  "tree-sitter-go",
  "tree-sitter-python",
  "tree-sitter-rust",
  "tree-sitter-typescript",
  "walkdir",
-]
-
-[[package]]
-name = "dig2memory-server"
-version = "0.1.2"
-dependencies = [
- "axum",
- "dig2memory-core",
- "rusqlite",
- "serde",
- "serde_json",
- "tokio",
- "tower-http",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]

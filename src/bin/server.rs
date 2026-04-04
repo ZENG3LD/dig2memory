@@ -1,14 +1,10 @@
 use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
 use tracing_subscriber::EnvFilter;
-use dig2memory_core::db::schema::init_schema;
-
-mod config;
-mod state;
-mod routes;
-
-use config::Config;
-use state::{AppState, SharedState};
+use dig2memory::db::schema::init_schema;
+use dig2memory::server::config::Config;
+use dig2memory::server::state::{AppState, SharedState};
+use dig2memory::server::routes;
 
 #[tokio::main]
 async fn main() {

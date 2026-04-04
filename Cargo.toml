@@ -1,7 +1,50 @@
+[package]
+name = "dig2memory"
+version = "0.2.0"
+edition = "2021"
+description = "AST index and dependency graph server for code intelligence"
+license = "MIT"
+repository = "https://github.com/ZENG3LD/dig2memory"
+
 [workspace]
-resolver = "2"
-members = [
-    "dig2memory-core",
-    "dig2memory-server",
-    "dig2memory-cli",
-]
+
+[features]
+default = ["lang-rust"]
+lang-rust = []
+lang-typescript = ["dep:tree-sitter-typescript"]
+lang-python = ["dep:tree-sitter-python"]
+lang-go = ["dep:tree-sitter-go"]
+watcher = ["dep:notify"]
+
+[[bin]]
+name = "dig2memory-server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "dig2memory"
+path = "src/bin/cli.rs"
+
+[dependencies]
+# Core / AST
+tree-sitter = "0.24"
+tree-sitter-rust = "0.23"
+tree-sitter-typescript = { version = "0.23", optional = true }
+tree-sitter-python = { version = "0.25", optional = true }
+tree-sitter-go = { version = "0.25", optional = true }
+rusqlite = { version = "0.32", features = ["bundled"] }
+walkdir = "2"
+cargo_metadata = "0.19"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tracing = "0.1"
+notify = { version = "6", optional = true }
+
+# Server
+axum = { version = "0.8", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }

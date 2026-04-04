@@ -5,8 +5,8 @@ use axum::{
 };
 use serde::Deserialize;
 use std::collections::{HashSet, VecDeque};
-use dig2memory_core::db::reader;
-use crate::state::{SharedState, AppError};
+use crate::db::reader;
+use crate::server::state::{SharedState, AppError};
 
 pub fn router() -> Router<SharedState> {
     Router::new()

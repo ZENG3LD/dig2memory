@@ -4,9 +4,9 @@ use axum::{
     Json, Router,
 };
 use serde::Deserialize;
-use dig2memory_core::db::reader;
-use dig2memory_core::search::trigram::fuzzy_search;
-use crate::state::{SharedState, AppError};
+use crate::db::reader;
+use crate::search::trigram::fuzzy_search;
+use crate::server::state::{SharedState, AppError};
 
 pub fn router() -> Router<SharedState> {
     Router::new()

@@ -1,8 +1,7 @@
 use axum::{extract::State, routing::post, Json, Router};
-use dig2memory_core::index::indexer::Indexer;
-use dig2memory_core::{IndexRequest, IndexResult};
-
-use crate::state::{AppError, SharedState};
+use crate::index::indexer::Indexer;
+use crate::{IndexRequest, IndexResult};
+use crate::server::state::{AppError, SharedState};
 
 pub fn router() -> Router<SharedState> {
     Router::new().route("/index", post(post_index))

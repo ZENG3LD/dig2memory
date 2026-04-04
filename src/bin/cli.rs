@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
-use dig2memory_core::db::reader;
-use dig2memory_core::search::trigram::fuzzy_search;
+use dig2memory::db::reader;
+use dig2memory::search::trigram::fuzzy_search;
 use rusqlite::Connection;
 use std::path::PathBuf;
 use std::process;

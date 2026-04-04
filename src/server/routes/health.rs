@@ -1,7 +1,7 @@
 use axum::{extract::State, routing::get, Json, Router};
-use dig2memory_core::HealthStatus;
-use dig2memory_core::db::reader;
-use crate::state::{SharedState, AppError};
+use crate::HealthStatus;
+use crate::db::reader;
+use crate::server::state::{SharedState, AppError};
 
 pub fn router() -> Router<SharedState> {
     Router::new().route("/health", get(get_health))
