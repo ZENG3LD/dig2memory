@@ -38,14 +38,16 @@ pub fn is_supported_extension(ext: &str) -> bool {
 
 /// Returns all file extensions supported by enabled language features.
 pub fn supported_extensions() -> Vec<&'static str> {
-    let mut exts: Vec<&str> = RUST_EXTENSIONS.to_vec();
-    #[cfg(feature = "lang-typescript")]
-    exts.extend_from_slice(TYPESCRIPT_EXTENSIONS);
-    #[cfg(feature = "lang-python")]
-    exts.extend_from_slice(PYTHON_EXTENSIONS);
-    #[cfg(feature = "lang-go")]
-    exts.extend_from_slice(GO_EXTENSIONS);
-    exts
+    let slices: &[&[&str]] = &[
+        RUST_EXTENSIONS,
+        #[cfg(feature = "lang-typescript")]
+        TYPESCRIPT_EXTENSIONS,
+        #[cfg(feature = "lang-python")]
+        PYTHON_EXTENSIONS,
+        #[cfg(feature = "lang-go")]
+        GO_EXTENSIONS,
+    ];
+    slices.iter().flat_map(|s| s.iter().copied()).collect()
 }
 
 /// Create a `LanguageSupport` implementation for a file, based on its extension.

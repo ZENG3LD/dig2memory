@@ -1,6 +1,6 @@
 [package]
 name = "dig2memory-core"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Code intelligence core — AST indexing, dependency graph, and symbol search"
 license = "MIT"
