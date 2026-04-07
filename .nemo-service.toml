@@ -90,5 +90,59 @@ confirm = false
 body = '{"workspace_id":"nemo","workspace_name":"nemo","root_path":"c:/Users/VA PC/CODING/ML_TRADING/nemo","force":false}'
 content_type = "application/json"
 
+[[manage_actions]]
+id = "search_symbol"
+label = "Fuzzy search symbol"
+description = "Find functions/structs/traits by name. Params: {q}"
+method = "GET"
+path = "/ast/search?q={q}&workspace=nemo"
+auth = "none"
+confirm = false
+
+[[manage_actions]]
+id = "find_callers"
+label = "Find callers of symbol"
+description = "List all callers of a symbol. Params: {sym}"
+method = "GET"
+path = "/ast/callers?sym={sym}&workspace=nemo"
+auth = "none"
+confirm = false
+
+[[manage_actions]]
+id = "resolve_symbol"
+label = "Resolve crate owning symbol"
+description = "Which crate defines this symbol. Params: {sym}"
+method = "GET"
+path = "/graph/resolve?sym={sym}&workspace=nemo"
+auth = "none"
+confirm = false
+
+[[manage_actions]]
+id = "impact_analysis"
+label = "Impact analysis for file"
+description = "What breaks if this file changes. Params: {file}"
+method = "GET"
+path = "/graph/impact?file={file}&workspace=nemo"
+auth = "none"
+confirm = false
+
+[[manage_actions]]
+id = "hotspots"
+label = "Most-connected modules"
+description = "Hotspot modules in the graph (no params)"
+method = "GET"
+path = "/graph/hotspots?workspace=nemo"
+auth = "none"
+confirm = false
+
+[[manage_actions]]
+id = "crate_tree"
+label = "Crate dependency tree"
+description = "Full crate dependency graph (no params)"
+method = "GET"
+path = "/graph/crates?workspace=nemo"
+auth = "none"
+confirm = false
+
 [health]
 endpoint = "/health"
