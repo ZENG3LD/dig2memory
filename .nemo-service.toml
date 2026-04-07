@@ -87,6 +87,8 @@ method = "POST"
 path = "/index"
 auth = "none"
 confirm = false
+mode = "async"
+timeout_secs = 600
 body = '{"workspace_id":"nemo","workspace_name":"nemo","root_path":"c:/Users/VA PC/CODING/ML_TRADING/nemo","force":false}'
 content_type = "application/json"
 
@@ -98,6 +100,12 @@ method = "GET"
 path = "/ast/search?q={q}&workspace=nemo"
 auth = "none"
 confirm = false
+timeout_secs = 30
+[[manage_actions.params_schema]]
+name = "q"
+required = true
+example = "AppState"
+description = "Symbol name to fuzzy-search"
 
 [[manage_actions]]
 id = "find_callers"
@@ -125,6 +133,13 @@ method = "GET"
 path = "/graph/impact?file={file}&workspace=nemo"
 auth = "none"
 confirm = false
+mode = "async"
+timeout_secs = 300
+[[manage_actions.params_schema]]
+name = "file"
+required = true
+example = "mylittlechart/crates/indicators/src/bar_indicators/mod.rs"
+description = "Workspace-relative file path"
 
 [[manage_actions]]
 id = "hotspots"
