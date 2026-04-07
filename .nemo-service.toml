@@ -1,0 +1,94 @@
+[service]
+name = "dig2memory-server"
+kind = "http_api"
+display_name = "dig2memory"
+description = "AST index + dependency graph + fuzzy search server (port 18200)"
+
+[links]
+local_url = "http://127.0.0.1:18200"
+docs = "dig2memory/README.md"
+
+[[endpoints]]
+method = "GET"
+path = "/health"
+description = "Server health and index stats"
+auth = "none"
+public = true
+
+[[endpoints]]
+method = "POST"
+path = "/index"
+description = "Trigger (re-)indexing of a workspace"
+auth = "none"
+public = true
+body_schema = '{"workspace_id":"string","root_path":"string","workspace_name":"string","force":"bool"}'
+
+[[endpoints]]
+method = "GET"
+path = "/ast/search"
+description = "Fuzzy symbol search by name (?q=NAME)"
+auth = "none"
+public = true
+
+[[endpoints]]
+method = "GET"
+path = "/ast/symbols"
+description = "List all symbols in a file (?file=PATH&workspace=WS)"
+auth = "none"
+public = true
+
+[[endpoints]]
+method = "GET"
+path = "/ast/callers"
+description = "Find callers of a symbol (?sym=NAME&workspace=WS)"
+auth = "none"
+public = true
+
+[[endpoints]]
+method = "GET"
+path = "/ast/deps"
+description = "File dependency list (?file=PATH&workspace=WS)"
+auth = "none"
+public = true
+
+[[endpoints]]
+method = "GET"
+path = "/graph/crates"
+description = "Crate dependency tree (?workspace=WS)"
+auth = "none"
+public = true
+
+[[endpoints]]
+method = "GET"
+path = "/graph/impact"
+description = "Impact analysis — what breaks if this file changes (?file=PATH&workspace=WS)"
+auth = "none"
+public = true
+
+[[endpoints]]
+method = "GET"
+path = "/graph/hotspots"
+description = "Most-connected modules (?workspace=WS)"
+auth = "none"
+public = true
+
+[[endpoints]]
+method = "GET"
+path = "/graph/resolve"
+description = "Resolve which crate owns a symbol (?sym=NAME&workspace=WS)"
+auth = "none"
+public = true
+
+[[manage_actions]]
+id = "reindex"
+label = "Re-index nemo workspace"
+description = "Trigger incremental re-index of the nemo workspace (force=false)"
+method = "POST"
+path = "/index"
+auth = "none"
+confirm = false
+body = '{"workspace_id":"nemo","workspace_name":"nemo","root_path":"c:/Users/VA PC/CODING/ML_TRADING/nemo","force":false}'
+content_type = "application/json"
+
+[health]
+endpoint = "/health"
