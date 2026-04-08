@@ -1,6 +1,6 @@
 [service]
 name = "dig2memory-server"
-kind = "http_api"
+kind = "service"
 display_name = "dig2memory"
 description = "AST index + dependency graph + fuzzy search server (port 18200)"
 
