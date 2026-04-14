@@ -1,5 +1,7 @@
 /target
+/target-ts
 /data
+/data-sandbox-ts
 *.db
 *.db-shm
 *.db-wal
