@@ -41,7 +41,7 @@ impl Indexer {
                 name: req.workspace_name.clone(),
                 indexed_at: None,
             };
-            let conn = db.lock().unwrap();
+            let conn = db.lock().map_err(|_| CoreError::LockPoisoned)?;
             writer::upsert_workspace(&conn, &workspace)?;
         }
 
@@ -53,7 +53,7 @@ impl Indexer {
         // Phase 3: Filter to files that need (re)indexing.
         let files_to_index: Vec<(PathBuf, String, i64, i64)> = if req.force {
             // Force: wipe existing workspace data first (brief lock).
-            let conn = db.lock().unwrap();
+            let conn = db.lock().map_err(|_| CoreError::LockPoisoned)?;
             conn.execute(
                 "DELETE FROM symbols WHERE workspace_id = ?1",
                 rusqlite::params![workspace_id],
@@ -74,7 +74,7 @@ impl Indexer {
             all_files
         } else {
             // Incremental: check mtime for each file (brief lock).
-            let conn = db.lock().unwrap();
+            let conn = db.lock().map_err(|_| CoreError::LockPoisoned)?;
             let filtered = all_files
                 .into_iter()
                 .filter(|(_, rel, mtime, _)| {
@@ -139,7 +139,7 @@ impl Indexer {
 
             // Write entire batch inside a single brief transaction.
             {
-                let conn = db.lock().unwrap();
+                let conn = db.lock().map_err(|_| CoreError::LockPoisoned)?;
                 let tx = conn.unchecked_transaction()?;
 
                 for pf in &parsed_batch {
@@ -222,14 +222,14 @@ impl Indexer {
                 .into_iter()
                 .map(|(_, rel, _, _)| rel)
                 .collect();
-            let conn = db.lock().unwrap();
+            let conn = db.lock().map_err(|_| CoreError::LockPoisoned)?;
             writer::delete_stale_files(&conn, workspace_id, &current_files)?;
         }
 
         // Phase 6: Parse cargo workspace for crate graph (brief lock).
         match parse_cargo_workspace(root, workspace_id) {
             Ok((nodes, edges)) => {
-                let conn = db.lock().unwrap();
+                let conn = db.lock().map_err(|_| CoreError::LockPoisoned)?;
                 for node in &nodes {
                     if let Err(e) = writer::upsert_crate_node(&conn, node) {
                         tracing::warn!("crate node insert error: {}", e);
@@ -258,7 +258,7 @@ impl Indexer {
                 name: req.workspace_name.clone(),
                 indexed_at: Some(now),
             };
-            let conn = db.lock().unwrap();
+            let conn = db.lock().map_err(|_| CoreError::LockPoisoned)?;
             writer::upsert_workspace(&conn, &updated_ws)?;
         }
 

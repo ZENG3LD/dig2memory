@@ -20,4 +20,7 @@ pub enum CoreError {
 
     #[error("workspace not found: {id}")]
     WorkspaceNotFound { id: String },
+
+    #[error("db mutex poisoned")]
+    LockPoisoned,
 }

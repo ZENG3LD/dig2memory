@@ -1,4 +1,5 @@
 use crate::error::CoreError;
+use crate::search::trigram::trigrams;
 use crate::types::{CallEdge, CrateNode, DepEdge, FileEdge, FileRecord, Symbol, Workspace};
 use rusqlite::{params, Connection};
 use std::collections::HashSet;
@@ -85,8 +86,7 @@ pub fn insert_symbol_trigrams(
     symbol_id: i64,
     name: &str,
 ) -> Result<(), CoreError> {
-    let tgrams = compute_trigrams(name);
-    for tgram in tgrams {
+    for tgram in trigrams(name) {
         conn.execute(
             "INSERT OR IGNORE INTO symbol_trigrams (symbol_id, trigram) VALUES (?1, ?2)",
             params![symbol_id, tgram],
@@ -193,14 +193,3 @@ pub fn delete_stale_files(
     Ok(())
 }
 
-/// Compute 3-character trigrams for a name (lowercase).
-fn compute_trigrams(name: &str) -> HashSet<String> {
-    let lower = name.to_lowercase();
-    let padded = format!("  {lower}  ");
-    let chars: Vec<char> = padded.chars().collect();
-    let mut result = HashSet::new();
-    for window in chars.windows(3) {
-        result.insert(window.iter().collect::<String>());
-    }
-    result
-}

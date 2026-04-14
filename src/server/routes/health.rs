@@ -8,17 +8,18 @@ pub fn router() -> Router<SharedState> {
 }
 
 async fn get_health(State(state): State<SharedState>) -> Result<Json<HealthStatus>, AppError> {
-    let db = state.db.lock().unwrap();
-    let workspace_count = reader::list_workspaces(&db).map(|ws| ws.len() as u32).unwrap_or(0);
-    let symbol_count = reader::count_symbols(&db, None).unwrap_or(0);
-    let file_count = reader::count_files(&db, None).unwrap_or(0);
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
+    let workspaces = reader::list_workspaces(&db);
+    let symbol_count = reader::count_symbols(&db, None);
+    let file_count = reader::count_files(&db, None);
+    let ok = workspaces.is_ok() && symbol_count.is_ok() && file_count.is_ok();
     let db_path = format!("{}/index.db", state.data_dir);
     let status = HealthStatus {
-        ok: true,
+        ok,
         db_path,
-        workspace_count,
-        symbol_count,
-        file_count,
+        workspace_count: workspaces.map(|ws| ws.len() as u32).unwrap_or(0),
+        symbol_count: symbol_count.unwrap_or(0),
+        file_count: file_count.unwrap_or(0),
     };
     Ok(Json(status))
 }

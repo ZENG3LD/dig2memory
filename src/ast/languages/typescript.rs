@@ -1,7 +1,7 @@
 use crate::ast::language::LanguageSupport;
 use crate::error::CoreError;
 use crate::types::{CallEdge, FileEdge, FileEdgeKind, Symbol, SymbolKind, Visibility};
-use std::path::Path;
+use std::path::{Component, Path, PathBuf};
 use tree_sitter::{Node, Parser, Tree};
 
 /// `LanguageSupport` implementation for TypeScript, TSX, JavaScript, and JSX.
@@ -304,6 +304,28 @@ fn collect_file_edges(
     }
 }
 
+/// Normalize a relative `PathBuf` by resolving `.` and `..` components without
+/// hitting the filesystem.  This turns `src/./Tool.ts` into `src/Tool.ts` and
+/// `src/a/../b/Tool.ts` into `src/b/Tool.ts`.
+fn normalize_path(path: &Path) -> PathBuf {
+    let mut out = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {} // skip `.`
+            Component::ParentDir => {
+                // Pop the last component only when there is a non-root segment to pop.
+                if matches!(out.components().next_back(), Some(Component::Normal(_))) {
+                    out.pop();
+                } else {
+                    out.push(component);
+                }
+            }
+            other => out.push(other),
+        }
+    }
+    out
+}
+
 /// Resolve a TypeScript import path to a workspace-relative file path.
 ///
 /// Returns `None` for external (non-relative) packages.
@@ -316,7 +338,7 @@ fn resolve_ts_import(import_path: &str, current_file: &str, root_path: &str) -> 
     let current_dir = Path::new(current_file)
         .parent()
         .unwrap_or(Path::new(""));
-    let base = current_dir.join(import_path);
+    let base = normalize_path(&current_dir.join(import_path));
     let root = Path::new(root_path);
 
     // Candidate extensions to try, in priority order.

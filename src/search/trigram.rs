@@ -1,6 +1,6 @@
 use crate::error::CoreError;
 use crate::types::{SearchHit, Symbol, SymbolKind, Visibility};
-use rusqlite::{Connection};
+use rusqlite::Connection;
 use std::collections::HashSet;
 
 /// Compute 3-character trigrams for a string (lowercased, padded with spaces).
@@ -62,7 +62,13 @@ pub fn fuzzy_search(
         .query_map(rusqlite::params_from_iter(tgram_list.iter()), |row| {
             row.get(0)
         })?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
         .collect();
 
     // Load symbols for candidates and score them.
@@ -127,8 +133,14 @@ fn row_to_symbol(row: &rusqlite::Row<'_>) -> rusqlite::Result<Symbol> {
         workspace_id: row.get(1)?,
         file_path: row.get(2)?,
         name: row.get(3)?,
-        kind: SymbolKind::from_str(&kind_str).unwrap_or(SymbolKind::Function),
-        visibility: Visibility::from_str(&vis_str).unwrap_or(Visibility::Private),
+        kind: SymbolKind::from_str(&kind_str).unwrap_or_else(|| {
+            tracing::warn!("[dig2memory] unknown SymbolKind: {kind_str}");
+            SymbolKind::Function
+        }),
+        visibility: Visibility::from_str(&vis_str).unwrap_or_else(|| {
+            tracing::warn!("[dig2memory] unknown Visibility: {vis_str}");
+            Visibility::Private
+        }),
         line: row.get(6)?,
         col: row.get(7)?,
         parent_name: row.get(8)?,

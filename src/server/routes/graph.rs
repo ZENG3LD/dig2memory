@@ -45,7 +45,7 @@ async fn list_crates(
     State(state): State<SharedState>,
     Query(params): Query<WorkspaceQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let nodes = reader::list_crate_nodes(&db, params.workspace.as_deref())?;
     let edges = reader::list_crate_deps(&db, params.workspace.as_deref())?;
     Ok(Json(serde_json::json!({ "nodes": nodes, "edges": edges })))
@@ -55,7 +55,7 @@ async fn files_in_crate(
     State(state): State<SharedState>,
     Query(params): Query<CrateQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let workspace = params.workspace.as_deref().unwrap_or("");
     let result = reader::list_file_edges(&db, workspace, None)?;
     // Filter to edges that belong to the requested crate by crate name prefix
@@ -72,7 +72,7 @@ async fn impact_analysis(
     State(state): State<SharedState>,
     Query(params): Query<FileQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let workspace = params.workspace.as_deref().unwrap_or("");
 
     // BFS over reverse file dependencies
@@ -100,7 +100,7 @@ async fn hotspots(
     State(state): State<SharedState>,
     Query(params): Query<HotspotsQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let limit = params.limit.unwrap_or(20);
     let result = reader::get_hotspots(&db, params.workspace.as_deref(), limit)?;
     Ok(Json(serde_json::json!(result)))
@@ -119,7 +119,7 @@ async fn resolve_symbol(
     State(state): State<SharedState>,
     Query(params): Query<ResolveQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let hits = reader::resolve_symbol_to_crate(&db, &params.workspace, &params.sym)?;
     let results: Vec<serde_json::Value> = hits
         .into_iter()

@@ -39,7 +39,7 @@ async fn search_symbols(
     State(state): State<SharedState>,
     Query(params): Query<SearchQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let limit = params.limit.unwrap_or(50);
     let results = fuzzy_search(&db, params.workspace.as_deref(), &params.q, limit, 0.1)?;
     Ok(Json(serde_json::json!(results)))
@@ -49,7 +49,7 @@ async fn symbols_in_file(
     State(state): State<SharedState>,
     Query(params): Query<FileQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let workspace = params.workspace.as_deref().unwrap_or("");
     let results = reader::get_symbols_in_file(&db, workspace, &params.file)?;
     Ok(Json(serde_json::json!(results)))
@@ -59,7 +59,7 @@ async fn callers_of_symbol(
     State(state): State<SharedState>,
     Query(params): Query<SymQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let results = reader::get_callers_of(&db, &params.sym, params.workspace.as_deref())?;
     Ok(Json(serde_json::json!(results)))
 }
@@ -68,7 +68,7 @@ async fn file_deps(
     State(state): State<SharedState>,
     Query(params): Query<FileQuery>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let db = state.db.lock().unwrap();
+    let db = state.db.lock().map_err(|_| AppError::Internal("db lock poisoned".into()))?;
     let workspace = params.workspace.as_deref().unwrap_or("");
     let results = reader::get_deps_of_file(&db, workspace, &params.file)?;
     Ok(Json(serde_json::json!(results)))

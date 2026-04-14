@@ -12,8 +12,14 @@ fn row_to_symbol(row: &rusqlite::Row<'_>) -> rusqlite::Result<Symbol> {
         workspace_id: row.get(1)?,
         file_path: row.get(2)?,
         name: row.get(3)?,
-        kind: SymbolKind::from_str(&kind_str).unwrap_or(SymbolKind::Function),
-        visibility: Visibility::from_str(&vis_str).unwrap_or(Visibility::Private),
+        kind: SymbolKind::from_str(&kind_str).unwrap_or_else(|| {
+            tracing::warn!("[dig2memory] unknown SymbolKind: {kind_str}");
+            SymbolKind::Function
+        }),
+        visibility: Visibility::from_str(&vis_str).unwrap_or_else(|| {
+            tracing::warn!("[dig2memory] unknown Visibility: {vis_str}");
+            Visibility::Private
+        }),
         line: row.get(6)?,
         col: row.get(7)?,
         parent_name: row.get(8)?,
@@ -49,7 +55,13 @@ pub fn get_symbols_in_file(
     )?;
     let symbols = stmt
         .query_map(params![workspace_id, file_path], row_to_symbol)?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
         .collect();
     Ok(symbols)
 }
@@ -77,7 +89,13 @@ pub fn get_callers_of(
                 .query_map(params![callee_name, ws], |row| {
                     Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
                 })?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             rows
         }
@@ -91,7 +109,13 @@ pub fn get_callers_of(
                 .query_map(params![callee_name], |row| {
                     Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
                 })?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             rows
         }
@@ -111,7 +135,13 @@ pub fn get_callers_of(
             )?;
             let sym = stmt
                 .query_map(params![symbol_id], row_to_symbol)?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .next();
             if let Some(s) = sym {
                 if seen_ids.insert(s.id) {
@@ -131,7 +161,13 @@ pub fn get_callers_of(
             )?;
             let sym = stmt
                 .query_map(params![ws_id, caller_file], row_to_symbol)?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .next();
             if let Some(s) = sym {
                 if seen_ids.insert(s.id) {
@@ -161,10 +197,19 @@ pub fn get_deps_of_file(
                 workspace_id: row.get(0)?,
                 from_file: row.get(1)?,
                 to_file: row.get(2)?,
-                kind: FileEdgeKind::from_str(&kind_str).unwrap_or(FileEdgeKind::UseDecl),
+                kind: FileEdgeKind::from_str(&kind_str).unwrap_or_else(|| {
+                    tracing::warn!("[dig2memory] unknown FileEdgeKind: {kind_str}");
+                    FileEdgeKind::UseDecl
+                }),
             })
         })?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
         .collect();
     Ok(result)
 }
@@ -205,7 +250,13 @@ pub fn list_crate_nodes(
             )?;
             let result = stmt
                 .query_map(params![ws], row_to_crate_node)?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             Ok(result)
         }
@@ -216,7 +267,13 @@ pub fn list_crate_nodes(
             )?;
             let result = stmt
                 .query_map([], row_to_crate_node)?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             Ok(result)
         }
@@ -236,7 +293,13 @@ pub fn list_crate_deps(
             )?;
             let result = stmt
                 .query_map(params![ws], row_to_dep_edge)?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             Ok(result)
         }
@@ -247,7 +310,13 @@ pub fn list_crate_deps(
             )?;
             let result = stmt
                 .query_map([], row_to_dep_edge)?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             Ok(result)
         }
@@ -272,7 +341,13 @@ pub fn resolve_symbol_to_crate(
     )?;
     let symbols: Vec<Symbol> = sym_stmt
         .query_map(params![workspace_id, symbol_name], row_to_symbol)?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
         .collect();
 
     if symbols.is_empty() {
@@ -287,7 +362,13 @@ pub fn resolve_symbol_to_crate(
     )?;
     let crate_nodes: Vec<CrateNode> = cn_stmt
         .query_map(params![workspace_id], row_to_crate_node)?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
         .collect();
 
     let mut results = Vec::new();
@@ -338,10 +419,19 @@ pub fn list_file_edges(
                         workspace_id: row.get(0)?,
                         from_file: row.get(1)?,
                         to_file: row.get(2)?,
-                        kind: FileEdgeKind::from_str(&kind_str).unwrap_or(FileEdgeKind::UseDecl),
+                        kind: FileEdgeKind::from_str(&kind_str).unwrap_or_else(|| {
+                    tracing::warn!("[dig2memory] unknown FileEdgeKind: {kind_str}");
+                    FileEdgeKind::UseDecl
+                }),
                     })
                 })?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             Ok(result)
         }
@@ -357,10 +447,19 @@ pub fn list_file_edges(
                         workspace_id: row.get(0)?,
                         from_file: row.get(1)?,
                         to_file: row.get(2)?,
-                        kind: FileEdgeKind::from_str(&kind_str).unwrap_or(FileEdgeKind::UseDecl),
+                        kind: FileEdgeKind::from_str(&kind_str).unwrap_or_else(|| {
+                    tracing::warn!("[dig2memory] unknown FileEdgeKind: {kind_str}");
+                    FileEdgeKind::UseDecl
+                }),
                     })
                 })?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             Ok(result)
         }
@@ -378,7 +477,13 @@ pub fn get_reverse_file_deps(
     )?;
     let result = stmt
         .query_map(params![workspace_id, file_path], |row| row.get(0))?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
         .collect();
     Ok(result)
 }
@@ -401,7 +506,13 @@ pub fn get_hotspots(
                     let count: i64 = row.get(1)?;
                     Ok((row.get(0)?, count as u32))
                 })?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             Ok(result)
         }
@@ -416,7 +527,13 @@ pub fn get_hotspots(
                     let count: i64 = row.get(1)?;
                     Ok((row.get(0)?, count as u32))
                 })?
-                .filter_map(|r| r.ok())
+                .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
                 .collect();
             Ok(result)
         }
@@ -496,7 +613,13 @@ pub fn list_workspaces(conn: &Connection) -> Result<Vec<Workspace>, CoreError> {
                 indexed_at: row.get(3)?,
             })
         })?
-        .filter_map(|r| r.ok())
+        .filter_map(|r| match r {
+            Ok(v) => Some(v),
+            Err(e) => {
+                tracing::warn!("[dig2memory] row read error: {e}");
+                None
+            }
+        })
         .collect();
     Ok(result)
 }
